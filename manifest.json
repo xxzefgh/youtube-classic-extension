@@ -1,0 +1,19 @@
+{
+  "name": "YouTube Classic",
+  "version": "1.0",
+  "description": "Restore Classic YouTube!",
+  "permissions": ["cookies", "https://*.youtube.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://*.youtube.com/*"],
+      "js": ["main.js"]
+    }
+  ],
+  "icons": {
+    "16": "images/yt_classic16.png",
+    "32": "images/yt_classic32.png",
+    "48": "images/yt_classic48.png",
+    "128": "images/yt_classic128.png"
+  },
+  "manifest_version": 2
+}
