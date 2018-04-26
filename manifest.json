@@ -2,7 +2,7 @@
   "name": "YouTube Classic",
   "version": "1.0",
   "description": "Restore Classic YouTube!",
-  "permissions": ["cookies", "https://*.youtube.com/*"],
+  "permissions": ["https://*.youtube.com/*"],
   "content_scripts": [
     {
       "matches": ["https://*.youtube.com/*"],
