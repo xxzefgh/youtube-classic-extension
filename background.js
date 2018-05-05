@@ -42,7 +42,7 @@ Cookie.prototype.stringify = function() {
 //
 // Extension logic
 //
-
+var ctx = "browser" in window ? window.browser : window.chrome;
 var targetUrl = "https://www.youtube.com/*";
 
 function injectCookie(e) {
@@ -65,7 +65,7 @@ function injectCookie(e) {
   return { requestHeaders: e.requestHeaders };
 }
 
-browser.webRequest.onBeforeSendHeaders.addListener(
+ctx.webRequest.onBeforeSendHeaders.addListener(
   injectCookie,
   { urls: [targetUrl], types: ["main_frame"] },
   ["blocking", "requestHeaders"]
