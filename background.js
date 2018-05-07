@@ -7,6 +7,7 @@ function Cookie(cookie_str) {
   this.cookie_arr = cookie_str
     .split(";")
     .map(item => item.trim())
+    .filter(item => item.length > 0)
     .map(item => {
       var kv_idx = item.indexOf("=");
 
@@ -32,6 +33,11 @@ Cookie.prototype.set = function(name, value) {
 
   if (item) {
     item.value = value;
+  } else {
+    this.cookie_arr.push({
+      name: name,
+      value: value
+    });
   }
 };
 
@@ -46,21 +52,26 @@ var ctx = "browser" in window ? window.browser : window.chrome;
 var targetUrl = "https://www.youtube.com/*";
 
 function injectCookie(e) {
-  for (var header of e.requestHeaders) {
-    if (header.name.toLowerCase() === "cookie") {
-      var cookieStore = new Cookie(header.value);
-      var modifiedPrefs = cookieStore
-        .get("PREF", "")
-        .split("&")
-        .filter(pref => pref.substr(0, 2) !== "f6")
-        .concat(["f6=42088"])
-        .join("&");
+  var cookieHeader = e.requestHeaders.find(function(header) {
+    return header.name.toLowerCase() === "cookie";
+  });
 
-      cookieStore.set("PREF", modifiedPrefs);
-
-      header.value = cookieStore.stringify();
-    }
+  if (!cookieHeader) {
+    cookieHeader = { name: "Cookie", value: "" };
+    e.requestHeaders.push(cookieHeader);
   }
+
+  var cookieStore = new Cookie(cookieHeader.value);
+  var modifiedPrefs = cookieStore
+    .get("PREF", "")
+    .split("&")
+    .filter(pref => pref.length > 0)
+    .filter(pref => pref.substr(0, 2) !== "f6")
+    .concat("f6=42088")
+    .join("&");
+
+  cookieStore.set("PREF", modifiedPrefs);
+  cookieHeader.value = cookieStore.stringify();
 
   return { requestHeaders: e.requestHeaders };
 }
