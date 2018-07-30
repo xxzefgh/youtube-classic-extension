@@ -52,6 +52,7 @@ var ctx = "browser" in window ? window.browser : window.chrome;
 var targetUrl = "https://www.youtube.com/*";
 
 function injectCookie(e) {
+  var applyScope = e.url.indexOf("watch?") > -1;
   var cookieHeader = e.requestHeaders.find(function(header) {
     return header.name.toLowerCase() === "cookie";
   });
@@ -67,7 +68,7 @@ function injectCookie(e) {
     .split("&")
     .filter(pref => pref.length > 0)
     .filter(pref => pref.substr(0, 2) !== "f6")
-    .concat("f6=42088")
+    .concat(applyScope ? "" : "f6=8")
     .join("&");
 
   cookieStore.set("PREF", modifiedPrefs);
