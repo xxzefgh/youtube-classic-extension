@@ -67,7 +67,7 @@ function injectCookie(e) {
     .split("&")
     .filter(pref => pref.length > 0)
     .filter(pref => pref.substr(0, 2) !== "f6")
-    .concat("f6=42088")
+    .concat("f6=8")
     .join("&");
 
   cookieStore.set("PREF", modifiedPrefs);
