@@ -62,18 +62,49 @@ function injectCookie(e) {
   }
 
   var cookieStore = new Cookie(cookieHeader.value);
-  var modifiedPrefs = cookieStore
-    .get("PREF", "")
-    .split("&")
-    .filter(pref => pref.length > 0)
-    .filter(pref => pref.substr(0, 2) !== "f6")
-    .concat("f6=8")
-    .join("&");
+  var prefs = cookieStore.get("PREF", "").split("&");
+  var modifiedPrefs = ensureRequiredPref(prefs).join("&");
 
   cookieStore.set("PREF", modifiedPrefs);
   cookieHeader.value = cookieStore.stringify();
 
   return { requestHeaders: e.requestHeaders };
+}
+
+function ensureRequiredPref(prefs) {
+  var f6 = false;
+  for (var i; i < prefs.length; i++) {
+    if (isCorrectPref(prefs[i])) {
+      prefs[i] = applyNeccessaryChanges(prefs[i]);
+      f6 = true;
+      break;
+    }
+  }
+
+  if (!f6) {
+    prefs.push("f6=8");
+  }
+
+
+  return prefs;
+}
+
+function isCorrectPref(pref) {
+  return pref.substr(0, 3) === "f6=";
+}
+
+function applyNeccessaryChanges(pref) {
+  if (shouldChangeToDefault(pref)) {
+    return "f6=8";
+  } else {
+    return pref;
+  }
+}
+
+function shouldChangeToDefault(pref) {
+  var lastBit = pref.substr(-1);
+
+  return lastBit !== "8" && lastBit !== "9";
 }
 
 ctx.webRequest.onBeforeSendHeaders.addListener(
