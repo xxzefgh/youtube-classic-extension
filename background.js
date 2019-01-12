@@ -48,8 +48,9 @@ Cookie.prototype.stringify = function() {
 //
 // Extension logic
 //
-var ctx = "browser" in window ? window.browser : window.chrome;
+var browser = "chrome" in window ? window.chrome : window.browser;
 var targetUrl = "https://www.youtube.com/*";
+var state = null;
 
 function injectCookie(e) {
   var cookieHeader = e.requestHeaders.find(function(header) {
@@ -89,6 +90,8 @@ function ensureRequiredPref(prefs) {
   return prefs;
 }
 
+function noop() {}
+
 function isCorrectPref(pref) {
   return pref.substr(0, 3) === "f6=";
 }
@@ -107,8 +110,43 @@ function shouldChangeToDefault(pref) {
   return lastBit !== "8" && lastBit !== "9";
 }
 
-ctx.webRequest.onBeforeSendHeaders.addListener(
+function getStoredState() {
+  return new Promise(function(resolve, reject) {
+    browser.storage.local.get(["mode", "workaround"], function(result) {
+      resolve({
+        mode: result.mode || "classic",
+        workaround: result.workaround || "cookie"
+      });
+    });
+  });
+}
+
+function setState(key, value) {
+  browser.storage.local.set({ [key]: value });
+}
+
+function reloadState() {
+  getStoredState().then(function(_state) {
+    state = _state;
+  });
+}
+
+browser.webRequest.onBeforeSendHeaders.addListener(
   injectCookie,
   { urls: [targetUrl], types: ["main_frame"] },
   ["blocking", "requestHeaders"]
 );
+
+browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+  switch (msg.type) {
+    case "GET_STATE": {
+      getStoredState().then(function(state) {
+        sendResponse(state);
+      });
+      return true;
+    }
+    case "SET_STATE": {
+      setState(msg.key, msg.value);
+    }
+  }
+});
