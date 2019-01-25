@@ -121,14 +121,11 @@ function modifyPrefIfRequired(pref, state) {
 
 function matchLastBit(str, chars) {
   var last_bit = str.substr(-1);
+  var match = chars.find(function(char) {
+    return char === last_bit;
+  });
 
-  for (var i = 0; i < chars.length; i++) {
-      if (chars[i] === last_bit) {
-          return true;
-      }
-  }
-
-  return false;
+  return !!match;
 }
 
 function replaceLastBit(str, char) {
