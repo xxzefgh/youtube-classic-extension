@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" type="text/css" href="popup.css">
+</head>
+
+<body>
+  <div class="container--mode">
+    <label for="mode-toggle">Mode: </label>
+    <label class="toggle">
+      <input id="mode-toggle" type="checkbox" checked>
+      <span class="toggle--slider toggle--slider-round"></span>
+    </label>
+  </div>
+  <br />
+
+  <div class="container--method">
+    <label for="method-selector">Method: </label>
+    <select id="method-selector" disabled>
+      <option value="cookie">Cookie</option>
+      <option value="useragent">User Agent</option>
+    </select>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+
+</html>

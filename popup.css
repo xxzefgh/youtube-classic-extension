@@ -1,0 +1,66 @@
+body {
+  padding: 4px;
+}
+
+.container--mode label.toggle {
+    top: 4px;
+    margin-left: 36px;
+}
+
+.container--method select {
+    margin-left: 20px;
+}
+
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 42px;
+  height: 22px;
+}
+
+.toggle input {
+  position: absolute;
+  opacity: 0;
+}
+
+.toggle--slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgb(180, 180, 180);
+  -webkit-transition: 0.2s;
+  transition: 0.2s;
+}
+
+.toggle--slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  -webkit-transition: 0.2s;
+  transition: 0.2s;
+}
+
+input:checked + .toggle--slider {
+  background-color: rgb(60, 179, 113);
+}
+
+input:checked + .toggle--slider:before {
+  -webkit-transform: translateX(20px);
+  -ms-transform: translateX(20px);
+  transform: translateX(20px);
+}
+
+.toggle--slider-round {
+  border-radius: 22px;
+}
+
+.toggle--slider-round:before {
+  border-radius: 50%;
+}

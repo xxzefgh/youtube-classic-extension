@@ -48,67 +48,122 @@ Cookie.prototype.stringify = function() {
 //
 // Extension logic
 //
-var ctx = "browser" in window ? window.browser : window.chrome;
+var browser = "chrome" in window ? window.chrome : window.browser;
 var targetUrl = "https://www.youtube.com/*";
 
-function injectCookie(e) {
-  var cookieHeader = e.requestHeaders.find(function(header) {
-    return header.name.toLowerCase() === "cookie";
+function processRequestHeaders(e) {
+  return new Promise(function(resolve, reject) {
+    getStoredState(function(state) {
+      var cookieHeader = e.requestHeaders.find(function(header) {
+        return header.name.toLowerCase() === "cookie";
+      });
+
+      if (!cookieHeader) {
+        cookieHeader = { name: "Cookie", value: "" };
+        e.requestHeaders.push(cookieHeader);
+      }
+
+      var cookieStore = new Cookie(cookieHeader.value);
+      var prefs = cookieStore.get("PREF", "");
+      var parsed_prefs = ensureRequiredPref(parsePrefs(prefs));
+      modifyPrefIfRequired(extractPrefByKey(parsed_prefs, "f6"), state);
+
+      cookieStore.set("PREF", joinPrefs(parsed_prefs));
+      cookieHeader.value = cookieStore.stringify();
+
+      resolve({ requestHeaders: e.requestHeaders });
+    });
   });
+}
 
-  if (!cookieHeader) {
-    cookieHeader = { name: "Cookie", value: "" };
-    e.requestHeaders.push(cookieHeader);
-  }
+function parsePrefs(prefs_str) {
+  return prefs_str.split("&")
+      .map(function(pref) {
+          return pref.split("=");
+      });
+}
 
-  var cookieStore = new Cookie(cookieHeader.value);
-  var prefs = cookieStore.get("PREF", "").split("&");
-  var modifiedPrefs = ensureRequiredPref(prefs).join("&");
-
-  cookieStore.set("PREF", modifiedPrefs);
-  cookieHeader.value = cookieStore.stringify();
-
-  return { requestHeaders: e.requestHeaders };
+function joinPrefs(prefs) {
+  return prefs.map(function(pref) {
+    return pref.join("=");
+  }).join("&");
 }
 
 function ensureRequiredPref(prefs) {
-  var f6 = false;
-  for (var i; i < prefs.length; i++) {
-    if (isCorrectPref(prefs[i])) {
-      prefs[i] = applyNeccessaryChanges(prefs[i]);
-      f6 = true;
-      break;
-    }
-  }
+  var exists = prefs.reduce(function(x, pref) {
+      if (pref[0] === "f6") {
+          return true;
+      } else {
+          return x;
+      }
+  }, false);
 
-  if (!f6) {
-    prefs.push("f6=8");
-  }
-
-
-  return prefs;
-}
-
-function isCorrectPref(pref) {
-  return pref.substr(0, 3) === "f6=";
-}
-
-function applyNeccessaryChanges(pref) {
-  if (shouldChangeToDefault(pref)) {
-    return "f6=8";
+  if (exists) {
+      return prefs;
   } else {
-    return pref;
+      return prefs.concat([[ "f6", "" ]]);
   }
 }
 
-function shouldChangeToDefault(pref) {
-  var lastBit = pref.substr(-1);
-
-  return lastBit !== "8" && lastBit !== "9";
+function extractPrefByKey(prefs, key) {
+  return prefs.find(function(pref) {
+      return pref[0] === key;
+  });
 }
 
-ctx.webRequest.onBeforeSendHeaders.addListener(
-  injectCookie,
+function modifyPrefIfRequired(pref, state) {
+  if (state.mode === "on" && !matchLastBit(pref[1], ["8", "9"])) {
+      pref[1] = replaceLastBit(pref[1], "8");
+  } else if (state.mode !== "on" && !matchLastBit(pref[1], ["0", "1"])) {
+      pref[1] = replaceLastBit(pref[1], "0");
+  }
+}
+
+function matchLastBit(str, chars) {
+  var last_bit = str.substr(-1);
+
+  for (var i = 0; i < chars.length; i++) {
+      if (chars[i] === last_bit) {
+          return true;
+      }
+  }
+
+  return false;
+}
+
+function replaceLastBit(str, char) {
+  return str.slice(0, -1).concat(char);
+}
+
+function getStoredState(cb) {
+  browser.storage.local.get(["mode", "method"], function(result) {
+    cb({
+      mode: result.mode || "on",
+      method: result.method || "cookie"
+    });
+  });
+}
+
+function setState(key, value) {
+  browser.storage.local.set({ [key]: value });
+}
+
+browser.webRequest.onBeforeSendHeaders.addListener(
+  processRequestHeaders,
   { urls: [targetUrl], types: ["main_frame"] },
   ["blocking", "requestHeaders"]
 );
+
+browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+  switch (msg.type) {
+    case "GET_STATE": {
+      getStoredState(function(_state) {
+        sendResponse(_state);
+      });
+      return true;
+    }
+    case "SET_STATE": {
+      setState(msg.key, msg.value);
+    }
+  }
+});
