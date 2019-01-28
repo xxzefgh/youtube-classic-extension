@@ -141,8 +141,8 @@ function getStoredState(cb) {
   });
 }
 
-function setState(key, value) {
-  browser.storage.local.set({ [key]: value });
+function setState(key, value, cb) {
+  browser.storage.local.set({ [key]: value }, cb);
 }
 
 browser.webRequest.onBeforeSendHeaders.addListener(
@@ -160,7 +160,10 @@ browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
       return true;
     }
     case "SET_STATE": {
-      setState(msg.key, msg.value);
+      setState(msg.key, msg.value, function() {
+        sendResponse();
+      });
+      return true;
     }
   }
 });
