@@ -9,3 +9,19 @@
     background: #444;
     border-color: #444;
 }
+
+@keyframes popupContainerInserted {
+    from {
+        display: block;
+    }
+    to {
+        display: block;
+    }
+}
+
+ytd-popup-container #container #sections
+yt-multi-page-menu-section-renderer:last-child #items
+ytd-compact-link-renderer:first-child {
+    animation-name: popupContainerInserted;
+    animation-duration: 0.01s;
+}
