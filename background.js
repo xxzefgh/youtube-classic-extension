@@ -49,7 +49,6 @@ Cookie.prototype.stringify = function() {
 // Extension logic
 //
 var browser = "chrome" in window ? window.chrome : window.browser;
-var chromeMajorVersion = detectChromeMajorVersion()
 var targetUrl = "https://www.youtube.com/*";
 var globalState = null
 
