@@ -50,30 +50,33 @@ Cookie.prototype.stringify = function() {
 //
 var browser = "chrome" in window ? window.chrome : window.browser;
 var targetUrl = "https://www.youtube.com/*";
+var globalState = null
 
 function processRequestHeaders(e) {
-  return new Promise(function(resolve, reject) {
-    getStoredState(function(state) {
-      var cookieHeader = e.requestHeaders.find(function(header) {
-        return header.name.toLowerCase() === "cookie";
-      });
+  if (globalState === null) return;
 
-      if (!cookieHeader) {
-        cookieHeader = { name: "Cookie", value: "" };
-        e.requestHeaders.push(cookieHeader);
-      }
-
-      var cookieStore = new Cookie(cookieHeader.value);
-      var prefs = cookieStore.get("PREF", "");
-      var parsed_prefs = ensureRequiredPref(parsePrefs(prefs));
-      modifyPrefIfRequired(extractPrefByKey(parsed_prefs, "f6"), state);
-
-      cookieStore.set("PREF", joinPrefs(parsed_prefs));
-      cookieHeader.value = cookieStore.stringify();
-
-      resolve({ requestHeaders: e.requestHeaders });
-    });
+  var cookieHeader = e.requestHeaders.find(function(header) {
+    return header.name.toLowerCase() === "cookie";
   });
+
+  if (!cookieHeader) {
+    cookieHeader = { name: "Cookie", value: "" };
+    e.requestHeaders.push(cookieHeader);
+  }
+
+  var cookieStore = new Cookie(cookieHeader.value);
+  var prefs = cookieStore.get("PREF", "");
+  var parsedPrefs = ensureRequiredPref(parsePrefs(prefs));
+
+  modifyPrefIfRequired(
+    extractPrefByKey(parsedPrefs, "f6"),
+    globalState
+  );
+
+  cookieStore.set("PREF", joinPrefs(parsedPrefs));
+  cookieHeader.value = cookieStore.stringify();
+
+  return { requestHeaders: e.requestHeaders };
 }
 
 function parsePrefs(prefs_str) {
@@ -141,14 +144,20 @@ function getStoredState(cb) {
   });
 }
 
-function setState(key, value) {
-  browser.storage.local.set({ [key]: value });
+function setState(key, value, cb) {
+  browser.storage.local.set({ [key]: value }, cb);
+}
+
+function reloadGlobalState() {
+  getStoredState(function(state) {
+    globalState = state;
+  });
 }
 
 browser.webRequest.onBeforeSendHeaders.addListener(
   processRequestHeaders,
   { urls: [targetUrl], types: ["main_frame"] },
-  ["blocking", "requestHeaders"]
+  ["blocking", "requestHeaders", "extraHeaders"]
 );
 
 browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
@@ -160,7 +169,11 @@ browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
       return true;
     }
     case "SET_STATE": {
-      setState(msg.key, msg.value);
+      setState(msg.key, msg.value, function() {
+        reloadGlobalState();
+      });
     }
   }
 });
+
+reloadGlobalState();
