@@ -2,10 +2,14 @@
 - [Firefox](https://addons.mozilla.org/en-US/firefox/addon/youtube-classic)
 - ~~Chrome~~ Removed from the Google Chrome Web store ¯\\_(ツ)_/¯
 
-Instead, you can download "crx" file from [releases page](https://github.com/thisdotvoid/youtube-classic-extension/releases), and follow instructions:
-  1. Settings-Icon > More tools > Extensions
-  2. Drag and drop the "crx" extension file onto the Extensions page from [step 1]
-  3. Install
+### Chrome installation instructions:
+- Download and unzip repository or clone it if you are familiar with git
+- Open Chrome, go to: Customize > More tools > Extensions
+- Turn Developer mode on
+- You will see 'Load unpacked' button appear, click it
+- Navigate to the extension folder you have created in the first step and select it
+- Done
+- PS: Don't delete or move extension folder
 
 ### Screenshots
 ##### Home:
