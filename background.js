@@ -49,6 +49,7 @@ Cookie.prototype.stringify = function() {
 // Extension logic
 //
 var browser = "chrome" in window ? window.chrome : window.browser;
+var chromeMajorVersion = detectChromeMajorVersion()
 var targetUrl = "https://www.youtube.com/*";
 var globalState = null
 
@@ -154,10 +155,21 @@ function reloadGlobalState() {
   });
 }
 
+function detectChromeMajorVersion() {
+  var version = /Chrome\/([0-9]+)/.exec(navigator.userAgent);
+
+  return version ? version[1] : -1;
+}
+
+var options = ["blocking", "requestHeaders"]
+if (detectChromeMajorVersion() > 71) {
+  options.push("extraHeaders")
+}
+
 browser.webRequest.onBeforeSendHeaders.addListener(
   processRequestHeaders,
   { urls: [targetUrl], types: ["main_frame"] },
-  ["blocking", "requestHeaders", "extraHeaders"]
+  options
 );
 
 browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
