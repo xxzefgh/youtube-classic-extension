@@ -10,7 +10,7 @@
 - Navigate to the extension folder you have created in the first step and select it
 - Done
 - PS: Don't delete or move extension folder
-- PPS: Chrome will constantly ask you to disable developer mode, so consider switching to Firefox 
+- PPS: Chrome will constantly ask you to disable developer mode, so consider switching to Firefox 🦊
 
 ### Screenshots
 ##### Home:
