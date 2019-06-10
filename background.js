@@ -110,10 +110,9 @@ function replaceLastBit(str, char) {
 }
 
 function getStoredState(cb) {
-	browser.storage.local.get(["enable", "method", "homepage"], function(result) {
+	browser.storage.local.get(["enable", "homepage"], function(result) {
 		cb({
 			enable: result.enable || "true",
-			method: result.method || "cookie",
 			homepage: result.homepage || "home"
 		});
 	});
