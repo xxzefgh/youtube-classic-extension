@@ -1,73 +1,19 @@
 "use strict";
 
-//
-// Cookie manipulation library
-//
-function Cookie(cookie_str) {
-	this.cookie_arr = cookie_str
-		.split(";")
-		.map(item => item.trim())
-		.filter(item => item.length > 0)
-		.map(item => {
-			var kv_idx = item.indexOf("=");
+const BASE_URL = "https://www.youtube.com";
+let browser = window.browser || window.chrome;
+let globalState = null;
 
-			return {
-				name: item.substr(0, kv_idx),
-				value: item.substr(kv_idx + 1)
-			};
-		});
-}
-
-Cookie.prototype.item = function(name) {
-	return this.cookie_arr.find(item => item.name === name);
-};
-
-Cookie.prototype.get = function(name, default_value) {
-	var item = this.item(name);
-
-	return item ? item.value : default_value;
-};
-
-Cookie.prototype.set = function(name, value) {
-	var item = this.item(name);
-
-	if (item) {
-		item.value = value;
-	} else {
-		this.cookie_arr.push({
-			name: name,
-			value: value
-		});
-	}
-};
-
-Cookie.prototype.stringify = function() {
-	return this.cookie_arr.map(item => item.name + "=" + item.value).join("; ");
-};
-
-//
-// Extension logic
-//
-var BASE_URL = "https://www.youtube.com";
-var browser = "chrome" in window ? window.chrome : window.browser;
-var globalState = null;
-
-function parsePrefs(prefs_str) {
-	return prefs_str.split("&").map(function(pref) {
-		return pref.split("=");
-	});
+function parsePrefs(prefsStr) {
+	return prefsStr.split("&").map(pref => pref.split("="));
 }
 
 function joinPrefs(prefs) {
-	return prefs
-		.map(function(pref) {
-			return pref.join("=");
-		})
-		.join("&");
+	return prefs.map(pref => pref.join("=")).join("&");
 }
 
 function ensureRequiredPref(prefs) {
-	var exists = prefs.reduce(function(x, pref) {
+	let exists = prefs.reduce((x, pref) => {
 		if (pref[0] === "f6") {
 			return true;
 		} else {
@@ -83,9 +29,7 @@ function ensureRequiredPref(prefs) {
 }
 
 function extractPrefByKey(prefs, key) {
-	return prefs.find(function(pref) {
-		return pref[0] === key;
-	});
+	return prefs.find(pref => pref[0] === key);
 }
 
 function modifyPrefIfRequired(pref, state) {
@@ -97,10 +41,8 @@ function modifyPrefIfRequired(pref, state) {
 }
 
 function matchLastBit(str, chars) {
-	var last_bit = str.substr(-1);
-	var match = chars.find(function(char) {
-		return char === last_bit;
-	});
+	let lastBit = str.substr(-1);
+	let match = chars.find(char => char === lastBit);
 
 	return !!match;
 }
@@ -110,7 +52,7 @@ function replaceLastBit(str, char) {
 }
 
 function getStoredState(cb) {
-	browser.storage.local.get(["enable", "homepage"], function(result) {
+	browser.storage.local.get(["enable", "homepage"], result => {
 		cb({
 			enable: result.enable || "true",
 			homepage: result.homepage || "home"
@@ -123,19 +65,18 @@ function setState(key, value, cb) {
 }
 
 function reloadGlobalState() {
-	getStoredState(function(state) {
+	getStoredState(state => {
 		globalState = state;
 	});
 }
 
 function detectChromeMajorVersion() {
-	var version = /Chrome\/([0-9]+)/.exec(navigator.userAgent);
-
+	let version = /Chrome\/([0-9]+)/.exec(navigator.userAgent);
 	return version ? version[1] : -1;
 }
 
 function onBeforeSendHeadersOptions() {
-	var options = ["blocking", "requestHeaders", "extraHeaders"];
+	let options = ["blocking", "requestHeaders", "extraHeaders"];
 	if (detectChromeMajorVersion() < 71) {
 		options.length = options.length - 1;
 	}
@@ -144,7 +85,7 @@ function onBeforeSendHeadersOptions() {
 }
 
 function onResponseStartedOptions() {
-	var options = ["responseHeaders", "extraHeaders"];
+	let options = ["responseHeaders", "extraHeaders"];
 	if (detectChromeMajorVersion() < 71) {
 		options.length = options.length - 1;
 	}
@@ -156,22 +97,22 @@ browser.webRequest.onBeforeSendHeaders.addListener(
 	function handleOnBeforeSendHeaders(details) {
 		if (globalState === null) return;
 
-		var cookieHeader = details.requestHeaders.find(function(header) {
-			return header.name.toLowerCase() === "cookie";
-		});
+		let cookieHeader = details.requestHeaders.find(
+			header => header.name.toLowerCase() === "cookie"
+		);
 
 		if (!cookieHeader) {
 			cookieHeader = { name: "Cookie", value: "" };
 			details.requestHeaders.push(cookieHeader);
 		}
 
-		var cookieStore = new Cookie(cookieHeader.value);
-		var prefs = cookieStore.get("PREF", "");
-		var parsedPrefs = ensureRequiredPref(parsePrefs(prefs));
+		let cookieStore = new CookieStore(cookieHeader.value);
+		let prefs = cookieStore.getItem("PREF", "");
+		let parsedPrefs = ensureRequiredPref(parsePrefs(prefs));
 
 		modifyPrefIfRequired(extractPrefByKey(parsedPrefs, "f6"), globalState);
 
-		cookieStore.set("PREF", joinPrefs(parsedPrefs));
+		cookieStore.setItem("PREF", joinPrefs(parsedPrefs));
 		cookieHeader.value = cookieStore.stringify();
 
 		return { requestHeaders: details.requestHeaders };
@@ -186,9 +127,9 @@ browser.webRequest.onResponseStarted.addListener(
 		if (globalState.enable !== "true") return;
 		if (globalState.homepage !== "subscriptions") return;
 
-		var setCookieHeader = details.responseHeaders.find(function(header) {
-			return header.name.toLowerCase() === "set-cookie";
-		});
+		let setCookieHeader = details.responseHeaders.find(
+			header => header.name.toLowerCase() === "set-cookie"
+		);
 
 		if (setCookieHeader) {
 			browser.tabs.update(details.tabId, {
@@ -200,18 +141,18 @@ browser.webRequest.onResponseStarted.addListener(
 	onResponseStartedOptions()
 );
 
-browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+browser.runtime.onMessage.addListener(function handleOnMessage(
+	msg,
+	sender,
+	sendResponse
+) {
 	switch (msg.type) {
 		case "GET_STATE": {
-			getStoredState(function(_state) {
-				sendResponse(_state);
-			});
+			getStoredState(state => sendResponse(state));
 			return true;
 		}
 		case "SET_STATE": {
-			setState(msg.key, msg.value, function() {
-				reloadGlobalState();
-			});
+			setState(msg.key, msg.value, () => reloadGlobalState());
 			break;
 		}
 	}

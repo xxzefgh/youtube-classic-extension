@@ -1,12 +1,14 @@
 (function(context) {
+	"use strict";
+
 	if (!context) {
 		return void console.warn("'window.browser' is undefined.");
 	}
 
-	var $enable_toggler = document.querySelector("#enable-toggler");
-	var $homepage_selector = document.querySelector("#homepage-selector");
+	var $enableToggler = document.querySelector("#enable-toggler");
+	var $homepageSelector = document.querySelector("#homepage-selector");
 
-	$enable_toggler.addEventListener("change", function(event) {
+	$enableToggler.addEventListener("change", function(event) {
 		context.runtime.sendMessage({
 			type: "SET_STATE",
 			key: "enable",
@@ -14,7 +16,7 @@
 		});
 	});
 
-	$homepage_selector.addEventListener("change", function(event) {
+	$homepageSelector.addEventListener("change", function(event) {
 		switch (event.target.value) {
 			case "home":
 			case "subscriptions": {
@@ -28,7 +30,7 @@
 	});
 
 	context.runtime.sendMessage({ type: "GET_STATE" }, function(state) {
-		$enable_toggler.checked = state.enable === "true";
-		$homepage_selector.value = state.homepage;
+		$enableToggler.checked = state.enable === "true";
+		$homepageSelector.value = state.homepage;
 	});
 })(window.browser || window.chrome);

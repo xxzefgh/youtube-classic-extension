@@ -10,7 +10,7 @@
     "*://www.youtube.com/*"
   ],
   "background": {
-    "scripts": ["background.js"]
+    "scripts": ["cookie.js", "background.js"]
   },
   "browser_action": {
     "default_icon": {
