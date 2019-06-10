@@ -1,29 +1,36 @@
-<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="stylesheet" type="text/css" href="popup.css" />
+	</head>
 
-<head>
-  <meta charset="utf-8">
-  <link rel="stylesheet" type="text/css" href="popup.css">
-</head>
+	<body>
+		<section class="table">
+			<div class="table-row">
+				<label for="enable-toggler" class="table-cell nowrap"
+					>Enable:</label
+				>
+				<input id="enable-toggler" type="checkbox" class="table-cell" />
+			</div>
 
-<body>
-  <div class="container--mode">
-    <label for="mode-toggle">Mode: </label>
-    <label class="toggle">
-      <input id="mode-toggle" type="checkbox" checked>
-      <span class="toggle--slider toggle--slider-round"></span>
-    </label>
-  </div>
-  <br />
+			<!-- <div class="table-row">
+				<label for="method-selector" class="table-cell">Method:</label>
+				<select id="method-selector" disabled class="table-cell">
+					<option value="cookie">Cookie</option>
+					<option value="useragent">User Agent</option>
+				</select>
+			</div> -->
 
-  <div class="container--method">
-    <label for="method-selector">Method: </label>
-    <select id="method-selector" disabled>
-      <option value="cookie">Cookie</option>
-      <option value="useragent">User Agent</option>
-    </select>
-  </div>
-
-  <script src="popup.js"></script>
-</body>
-
+			<div class="table-row">
+				<label for="homepage-selector" class="table-cell nowrap"
+					>Home page:</label
+				>
+				<select id="homepage-selector" class="table-cell">
+					<option value="home">Home</option>
+					<option value="subscriptions">Subscriptions</option>
+				</select>
+			</div>
+		</section>
+		<script src="popup.js"></script>
+	</body>
 </html>
