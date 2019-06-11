@@ -31,7 +31,7 @@ class CookieStore {
 		if (item !== undefined) {
 			item[1] = value;
 		} else {
-			this.cookieArr.push([name, value]);
+			this.cookieList.push([name, value]);
 		}
 	}
 
