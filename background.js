@@ -97,6 +97,7 @@ function onResponseStartedOptions() {
 browser.webRequest.onBeforeRequest.addListener(
 	function handleOnBeforeRequest(details) {
 		if (globalState === null) return;
+		if (globalState.enable !== "true") return;
 
 		let [baseUrl, queryString] = details.url.split('?');
 		let queryParams = queryString ? queryString.split('&') : [];
@@ -121,6 +122,7 @@ browser.webRequest.onBeforeSendHeaders.addListener(
 	function handleOnBeforeSendHeaders(details) {
 		if (COOKIE_MODIFICATION_DISABLED) return;
 		if (globalState === null) return;
+		if (globalState.enable !== "true") return;
 
 		let cookieHeader = details.requestHeaders.find(
 			header => header.name.toLowerCase() === "cookie"
