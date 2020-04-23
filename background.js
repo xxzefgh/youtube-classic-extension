@@ -1,6 +1,7 @@
 "use strict";
 
 const BASE_URL = "https://www.youtube.com";
+const COOKIE_MODIFICATION_DISABLED = true;
 let browser = window.browser || window.chrome;
 let globalState = null;
 
@@ -93,8 +94,32 @@ function onResponseStartedOptions() {
 	return options;
 }
 
+browser.webRequest.onBeforeRequest.addListener(
+	function handleOnBeforeRequest(details) {
+		if (globalState === null) return;
+
+		let [baseUrl, queryString] = details.url.split('?');
+		let queryParams = queryString ? queryString.split('&') : [];
+
+		let disablePolymerExists = false;
+		for (let param of queryParams) {
+			if (param.indexOf('disable_polymer') !== -1) {
+				disablePolymerExists = true;
+			}
+		}
+
+		if (!disablePolymerExists) {
+			queryParams.push('disable_polymer=1');
+			return { redirectUrl: baseUrl + '?' + queryParams.join('&')};
+		}
+	},
+	{ urls: [BASE_URL + "/*"], types: ["main_frame"] },
+	["blocking"]
+);
+
 browser.webRequest.onBeforeSendHeaders.addListener(
 	function handleOnBeforeSendHeaders(details) {
+		if (COOKIE_MODIFICATION_DISABLED) return;
 		if (globalState === null) return;
 
 		let cookieHeader = details.requestHeaders.find(
