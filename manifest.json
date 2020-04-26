@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "YouTube Classic",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "Restore Classic YouTube!",
   "permissions": [
     "storage",
@@ -26,5 +26,10 @@
     "32": "images/yt_classic32.png",
     "48": "images/yt_classic48.png",
     "128": "images/yt_classic128.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "{6acd0f4d-ab79-4b79-9b28-8bde65ae355c}"
+    }
   }
 }
