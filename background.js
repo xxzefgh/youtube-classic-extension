@@ -1,7 +1,7 @@
 "use strict";
 
 const BASE_URL = "https://www.youtube.com";
-const COOKIE_MODIFICATION_DISABLED = true;
+const COOKIE_MODIFICATION = true;
 let browser = window.browser || window.chrome;
 let globalState = null;
 
@@ -96,6 +96,7 @@ function onResponseStartedOptions() {
 
 browser.webRequest.onBeforeRequest.addListener(
 	function handleOnBeforeRequest(details) {
+		if (COOKIE_MODIFICATION) return;
 		if (globalState === null) return;
 		if (globalState.enable !== "true") return;
 
@@ -120,7 +121,7 @@ browser.webRequest.onBeforeRequest.addListener(
 
 browser.webRequest.onBeforeSendHeaders.addListener(
 	function handleOnBeforeSendHeaders(details) {
-		if (COOKIE_MODIFICATION_DISABLED) return;
+		if (!COOKIE_MODIFICATION) return;
 		if (globalState === null) return;
 		if (globalState.enable !== "true") return;
 
