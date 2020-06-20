@@ -1,16 +1,17 @@
 "use strict";
 
 const BASE_URL = "https://www.youtube.com";
-const COOKIE_MODIFICATION = true;
+const GOOGLEBOT_USERAGENT =
+	"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
 let browser = window.browser || window.chrome;
 let globalState = null;
 
 function parsePrefs(prefsStr) {
-	return prefsStr.split("&").map(pref => pref.split("="));
+	return prefsStr.split("&").map((pref) => pref.split("="));
 }
 
 function joinPrefs(prefs) {
-	return prefs.map(pref => pref.join("=")).join("&");
+	return prefs.map((pref) => pref.join("=")).join("&");
 }
 
 function ensureRequiredPref(prefs) {
@@ -30,7 +31,7 @@ function ensureRequiredPref(prefs) {
 }
 
 function extractPrefByKey(prefs, key) {
-	return prefs.find(pref => pref[0] === key);
+	return prefs.find((pref) => pref[0] === key);
 }
 
 function modifyPrefIfRequired(pref, state) {
@@ -43,7 +44,7 @@ function modifyPrefIfRequired(pref, state) {
 
 function matchLastBit(str, chars) {
 	let lastBit = str.substr(-1);
-	let match = chars.find(char => char === lastBit);
+	let match = chars.find((char) => char === lastBit);
 
 	return !!match;
 }
@@ -53,10 +54,11 @@ function replaceLastBit(str, char) {
 }
 
 function getStoredState(cb) {
-	browser.storage.local.get(["enable", "homepage"], result => {
+	browser.storage.local.get(["enable", "homepage", "method"], (result) => {
 		cb({
 			enable: result.enable || "true",
-			homepage: result.homepage || "home"
+			homepage: result.homepage || "home",
+			method: result.method || "useragent",
 		});
 	});
 }
@@ -66,7 +68,7 @@ function setState(key, value, cb) {
 }
 
 function reloadGlobalState() {
-	getStoredState(state => {
+	getStoredState((state) => {
 		globalState = state;
 	});
 }
@@ -96,23 +98,23 @@ function onResponseStartedOptions() {
 
 browser.webRequest.onBeforeRequest.addListener(
 	function handleOnBeforeRequest(details) {
-		if (COOKIE_MODIFICATION) return;
 		if (globalState === null) return;
 		if (globalState.enable !== "true") return;
+		if (globalState.method !== "redirect") return;
 
-		let [baseUrl, queryString] = details.url.split('?');
-		let queryParams = queryString ? queryString.split('&') : [];
+		let [baseUrl, queryString] = details.url.split("?");
+		let queryParams = queryString ? queryString.split("&") : [];
 
 		let disablePolymerExists = false;
 		for (let param of queryParams) {
-			if (param.indexOf('disable_polymer') !== -1) {
+			if (param.indexOf("disable_polymer") !== -1) {
 				disablePolymerExists = true;
 			}
 		}
 
 		if (!disablePolymerExists) {
-			queryParams.push('disable_polymer=1');
-			return { redirectUrl: baseUrl + '?' + queryParams.join('&')};
+			queryParams.push("disable_polymer=1");
+			return { redirectUrl: baseUrl + "?" + queryParams.join("&") };
 		}
 	},
 	{ urls: [BASE_URL + "/*"], types: ["main_frame"] },
@@ -121,27 +123,52 @@ browser.webRequest.onBeforeRequest.addListener(
 
 browser.webRequest.onBeforeSendHeaders.addListener(
 	function handleOnBeforeSendHeaders(details) {
-		if (!COOKIE_MODIFICATION) return;
 		if (globalState === null) return;
 		if (globalState.enable !== "true") return;
-
-		let cookieHeader = details.requestHeaders.find(
-			header => header.name.toLowerCase() === "cookie"
+		if (
+			globalState.method !== "cookie" &&
+			globalState.method !== "useragent"
 		);
 
-		if (!cookieHeader) {
-			cookieHeader = { name: "Cookie", value: "" };
-			details.requestHeaders.push(cookieHeader);
+		if (globalState.method === "cookie") {
+			let cookieHeader = details.requestHeaders.find(
+				(header) => header.name.toLowerCase() === "cookie"
+			);
+
+			if (!cookieHeader) {
+				cookieHeader = { name: "Cookie", value: "" };
+				details.requestHeaders.push(cookieHeader);
+			}
+
+			let cookieStore = new CookieStore(cookieHeader.value);
+			let prefs = cookieStore.getItem("PREF", "");
+			let parsedPrefs = ensureRequiredPref(parsePrefs(prefs));
+
+			modifyPrefIfRequired(
+				extractPrefByKey(parsedPrefs, "f6"),
+				globalState
+			);
+
+			cookieStore.setItem("PREF", joinPrefs(parsedPrefs));
+			cookieHeader.value = cookieStore.stringify();
 		}
 
-		let cookieStore = new CookieStore(cookieHeader.value);
-		let prefs = cookieStore.getItem("PREF", "");
-		let parsedPrefs = ensureRequiredPref(parsePrefs(prefs));
+		if (globalState.method === "useragent") {
+			let userAgentHeader = details.requestHeaders.find(
+				(header) => header.name.toLowerCase() === "user-agent"
+			);
 
-		modifyPrefIfRequired(extractPrefByKey(parsedPrefs, "f6"), globalState);
+			if (!userAgentHeader) {
+				userAgentHeader = {
+					name: "User-Agent",
+				};
+				details.requestHeaders.push(userAgentHeader);
+			}
 
-		cookieStore.setItem("PREF", joinPrefs(parsedPrefs));
-		cookieHeader.value = cookieStore.stringify();
+			userAgentHeader.value = GOOGLEBOT_USERAGENT;
+		}
+
+		console.log(details.requestHeaders);
 
 		return { requestHeaders: details.requestHeaders };
 	},
@@ -156,12 +183,12 @@ browser.webRequest.onResponseStarted.addListener(
 		if (globalState.homepage !== "subscriptions") return;
 
 		let setCookieHeader = details.responseHeaders.find(
-			header => header.name.toLowerCase() === "set-cookie"
+			(header) => header.name.toLowerCase() === "set-cookie"
 		);
 
 		if (setCookieHeader) {
 			browser.tabs.update(details.tabId, {
-				url: BASE_URL + "/feed/subscriptions"
+				url: BASE_URL + "/feed/subscriptions",
 			});
 		}
 	},
@@ -176,11 +203,12 @@ browser.runtime.onMessage.addListener(function handleOnMessage(
 ) {
 	switch (msg.type) {
 		case "GET_STATE": {
-			getStoredState(state => sendResponse(state));
+			getStoredState((state) => sendResponse(state));
 			return true;
 		}
 		case "SET_STATE": {
 			setState(msg.key, msg.value, () => reloadGlobalState());
+			console.log(msg, globalState);
 			break;
 		}
 	}
