@@ -168,8 +168,6 @@ browser.webRequest.onBeforeSendHeaders.addListener(
 			userAgentHeader.value = GOOGLEBOT_USERAGENT;
 		}
 
-		console.log(details.requestHeaders);
-
 		return { requestHeaders: details.requestHeaders };
 	},
 	{ urls: [BASE_URL + "/*"], types: ["main_frame"] },
@@ -208,7 +206,6 @@ browser.runtime.onMessage.addListener(function handleOnMessage(
 		}
 		case "SET_STATE": {
 			setState(msg.key, msg.value, () => reloadGlobalState());
-			console.log(msg, globalState);
 			break;
 		}
 	}
